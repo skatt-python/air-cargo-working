@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Заявки на перевозку</h1>
+{% if shipments %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Маршрут</th>
+                <th>Цена</th>
+                <th>Дата</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for shipment in shipments %}
+            <tr>
+                <td>{{ shipment.id }}</td>
+                <td>{{ shipment.title }}</td>
+                <td>{{ shipment.departure_city }} → {{ shipment.arrival_city }}</td>
+                <td>{{ shipment.estimated_price }}</td>
+                <td>{{ shipment.created_at|date:"d.m.Y" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>Заявок пока нет.</p>
+{% endif %}
+{% endblock %}

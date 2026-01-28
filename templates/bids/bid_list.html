@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Предложения перевозчиков</h1>
+{% if bids %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Заявка</th>
+                <th>Цена</th>
+                <th>Дата</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bid in bids %}
+            <tr>
+                <td>{{ bid.id }}</td>
+                <td>{{ bid.shipment.title }}</td>
+                <td>{{ bid.price }}</td>
+                <td>{{ bid.created_at|date:"d.m.Y" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>Предложений пока нет.</p>
+{% endif %}
+{% endblock %}
