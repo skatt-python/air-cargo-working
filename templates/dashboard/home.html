@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}AirCargo - Платформа грузовых авиаперевозок{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row align-items-center">
+        <div class="col-lg-6">
+            <h1 class="display-4 fw-bold mb-4">
+                <i class="fas fa-plane-departure text-primary me-3"></i>
+                AirCargo Platform
+            </h1>
+            <p class="lead mb-4">
+                Платформа для автоматизации грузовых авиаперевозок. 
+                Соединяем грузовладельцев и перевозчиков в одном месте.
+            </p>
+            
+            <div class="row mb-5">
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="fas fa-shipping-fast fa-3x text-success mb-3"></i>
+                            <h5>Для грузовладельцев</h5>
+                            <p class="text-muted">Создавайте заявки на перевозку и получайте выгодные предложения</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="fas fa-plane fa-3x text-primary mb-3"></i>
+                            <h5>Для перевозчиков</h5>
+                            <p class="text-muted">Находите заявки и предлагайте свои услуги</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex">
+                <a href="{% url 'register' %}" class="btn btn-primary btn-lg px-4 me-md-2">
+                    <i class="fas fa-user-plus me-2"></i>Начать работу
+                </a>
+                <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="fas fa-sign-in-alt me-2"></i>Войти
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-5">
+                    <h3 class="card-title mb-4">Как это работает?</h3>
+                    <div class="timeline">
+                        <div class="timeline-item mb-4">
+                            <div class="timeline-icon bg-primary text-white">
+                                <i class="fas fa-1"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5>Регистрация</h5>
+                                <p>Зарегистрируйтесь как грузовладелец или агент перевозчика</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item mb-4">
+                            <div class="timeline-icon bg-success text-white">
+                                <i class="fas fa-2"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5>Создание заявки</h5>
+                                <p>Грузовладельцы создают заявки с параметрами перевозки</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item mb-4">
+                            <div class="timeline-icon bg-info text-white">
+                                <i class="fas fa-3"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5>Предложения</h5>
+                                <p>Агенты предлагают свои услуги и цены</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-icon bg-warning text-white">
+                                <i class="fas fa-4"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5>Сделка</h5>
+                                <p>Грузовладелец выбирает лучшее предложение</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 60px;
+}
+.timeline:before {
+    content: '';
+    position: absolute;
+    left: 30px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+.timeline-item {
+    position: relative;
+}
+.timeline-icon {
+    position: absolute;
+    left: -60px;
+    top: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+.timeline-content {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+</style>
+{% endblock %}

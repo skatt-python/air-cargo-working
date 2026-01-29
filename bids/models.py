@@ -1,67 +1,69 @@
-# bids/models.py - ОБНОВЛЕННАЯ ВЕРСИЯ С СОВМЕСТИМОСТЬЮ
 from django.db import models
-from django.conf import settings
+from django.contrib.auth.models import User
 from shipments.models import Shipment
 
 
 class Bid(models.Model):
-    BID_STATUS_CHOICES = [
-        ('pending', 'В ожидании'),
+    STATUS_CHOICES = (
+        ('pending', 'Ожидает рассмотрения'),
         ('accepted', 'Принято'),
         ('rejected', 'Отклонено'),
-        ('cancelled', 'Отменено'),
-    ]
+        ('cancelled', 'Отменено агентом'),
+    )
 
-    # Существующие поля (уже есть в базе)
     shipment = models.ForeignKey(
         Shipment,
         on_delete=models.CASCADE,
-        related_name='bids'  # Добавим related_name для удобства
+        related_name='bids',
+        verbose_name='Заявка'
     )
-    carrier_agent = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+    agent = models.ForeignKey(
+        User,
         on_delete=models.CASCADE,
-        related_name='submitted_bids'
+        related_name='bids',
+        verbose_name='Агент'
     )
     price = models.DecimalField(
-        max_digits=12,
-        decimal_places=2
+        max_digits=15,
+        decimal_places=2,
+        verbose_name='Предлагаемая цена'
     )
-    notes = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    # НОВЫЕ поля (добавим через миграцию)
+    proposed_departure_date = models.DateField(
+        verbose_name='Предлагаемая дата отправления',
+        null=True,
+        blank=True
+    )
+    proposed_arrival_date = models.DateField(
+        verbose_name='Предлагаемая дата прибытия',
+        null=True,
+        blank=True
+    )
+    notes = models.TextField(
+        verbose_name='Комментарии и условия',
+        blank=True
+    )
     status = models.CharField(
         max_length=20,
-        choices=BID_STATUS_CHOICES,
+        choices=STATUS_CHOICES,
         default='pending',
         verbose_name='Статус'
     )
-    currency = models.CharField(
-        max_length=3,
-        default='USD',
-        choices=[('USD', 'USD'), ('EUR', 'EUR'), ('RUB', 'RUB')],
-        verbose_name='Валюта'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Дата обновления'
-    )
-
-    class Meta:
-        verbose_name = 'Предложение'
-        verbose_name_plural = 'Предложения'
-        ordering = ['-created_at']
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'Предложение #{self.id} для заявки #{self.shipment.id}'
+        return f"Предложение #{self.id} к заявке #{self.shipment.id}"
 
-    def accept(self):
-        """Принять предложение"""
-        self.status = 'accepted'
-        self.save()
+    def is_pending(self):
+        return self.status == 'pending'
 
-    def reject(self):
-        """Отклонить предложение"""
-        self.status = 'rejected'
-        self.save()
+    def can_be_accepted(self):
+        return self.status == 'pending'
+
+    def can_be_cancelled(self):
+        return self.status == 'pending'
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Предложение'
+        verbose_name_plural = 'Предложения'

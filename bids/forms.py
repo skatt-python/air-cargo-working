@@ -5,23 +5,30 @@ from .models import Bid
 class BidForm(forms.ModelForm):
     class Meta:
         model = Bid
-        fields = ['price', 'currency', 'notes']
+        fields = ['price', 'proposed_departure_date', 'proposed_arrival_date', 'notes']
         widgets = {
             'price': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'step': '0.01',
-                'min': '0',
-                'placeholder': 'Введите цену'
+                'placeholder': 'Введите цену в рублях',
+                'step': '0.01'
             }),
-            'currency': forms.Select(attrs={'class': 'form-control'}),
+            'proposed_departure_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'proposed_arrival_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Дополнительная информация о вашем предложении...'
+                'placeholder': 'Комментарии...'
             }),
         }
-        labels = {
-            'price': 'Цена предложения',
-            'currency': 'Валюта',
-            'notes': 'Дополнительные заметки',
-        }
+
+    def clean_price(self):
+        price = self.cleaned_data.get('price')
+        if price <= 0:
+            raise forms.ValidationError("Цена должна быть больше нуля")
+        return price
