@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Мои предложения{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Мои предложения</h2>
+    
+    {% if bids %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Заявка</th>
+                        <th>Цена</th>
+                        <th>Статус</th>
+                        <th>Дата создания</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bid in bids %}
+                    <tr>
+                        <td>#{{ bid.id }}</td>
+                        <td>
+                            <a href="{% url 'shipments:shipment_detail' bid.shipment.id %}">
+                                {{ bid.shipment.title }}
+                            </a>
+                        </td>
+                        <td>
+                            {{ bid.price }} {{ bid.currency }}
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if bid.status == 'pending' %}bg-warning
+                                {% elif bid.status == 'accepted' %}bg-success
+                                {% elif bid.status == 'rejected' %}bg-danger
+                                {% else %}bg-secondary{% endif %}">
+                                {{ bid.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ bid.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'bids:bid_detail' bid.id %}" class="btn btn-sm btn-outline-primary">
+                                Просмотр
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            У вас еще нет предложений. Найдите интересные заявки на 
+            <a href="{% url 'shipments:shipment_list' %}">странице заявок</a> и создайте предложение.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Создание предложения{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Создание предложения</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5>Информация о заявке:</h5>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6>{{ shipment.title }}</h6>
+                                <p><strong>Маршрут:</strong> {{ shipment.departure_city }} → {{ shipment.arrival_city }}</p>
+                                <p><strong>Вес:</strong> {{ shipment.weight }} кг</p>
+                                <p><strong>Ожидаемая цена:</strong> ${{ shipment.estimated_price }}</p>
+                                <p><strong>Описание:</strong> {{ shipment.description|default:"-" }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            Пожалуйста, исправьте ошибки ниже.
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.price.id_for_label }}" class="form-label">{{ form.price.label }}</label>
+                                <div class="input-group">
+                                    {{ form.price }}
+                                    <span class="input-group-text">{{ form.currency.value }}</span>
+                                </div>
+                                {% if form.price.errors %}
+                                <div class="text-danger small">{{ form.price.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.currency.id_for_label }}" class="form-label">{{ form.currency.label }}</label>
+                                {{ form.currency }}
+                                {% if form.currency.errors %}
+                                <div class="text-danger small">{{ form.currency.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">{{ form.notes.label }}</label>
+                            {{ form.notes }}
+                            <div class="form-text">Опишите условия перевозки, сроки, дополнительные услуги</div>
+                            {% if form.notes.errors %}
+                            <div class="text-danger small">{{ form.notes.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'shipments:shipment_detail' shipment.id %}" class="btn btn-outline-secondary me-md-2">
+                                Отмена
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                Создать предложение
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

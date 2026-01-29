@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Заявки на перевозку{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Заявки на перевозку</h2>
+    
+    {% if shipments %}
+        <div class="row">
+            {% for shipment in shipments %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ shipment.title }}</h5>
+                        <span class="badge bg-success">Активна</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <p><strong>Маршрут:</strong> {{ shipment.departure_city }} → {{ shipment.arrival_city }}</p>
+                            <p><strong>Вес:</strong> {{ shipment.weight }} кг</p>
+                            <p><strong>Ожидаемая цена:</strong> ${{ shipment.estimated_price }}</p>
+                            {% if shipment.description %}
+                            <p class="text-truncate"><strong>Описание:</strong> {{ shipment.description|truncatechars:100 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                {{ shipment.created_at|date:"d.m.Y H:i" }}
+                            </small>
+                            <a href="{% url 'shipments:shipment_detail' shipment.id %}" class="btn btn-sm btn-primary">
+                                Подробнее
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            В данный момент нет активных заявок.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

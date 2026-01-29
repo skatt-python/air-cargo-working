@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ shipment.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:dashboard' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'shipments:shipment_list' %}">Заявки</a></li>
+            <li class="breadcrumb-item active">{{ shipment.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">{{ shipment.title }}</h4>
+                    <span class="badge 
+                        {% if shipment.status == 'active' %}bg-success
+                        {% elif shipment.status == 'in_progress' %}bg-primary
+                        {% elif shipment.status == 'completed' %}bg-secondary
+                        {% elif shipment.status == 'cancelled' %}bg-danger
+                        {% else %}bg-warning{% endif %}">
+                        {{ shipment.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Информация о грузе:</h6>
+                            <p><strong>Вес:</strong> {{ shipment.weight }} кг</p>
+                            <p><strong>Тип груза:</strong> {{ shipment.cargo_type|default:"Общий" }}</p>
+                            <p><strong>Ожидаемая цена:</strong> ${{ shipment.estimated_price }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Маршрут:</h6>
+                            <p><strong>Отправление:</strong> {{ shipment.departure_city }}</p>
+                            <p><strong>Назначение:</strong> {{ shipment.arrival_city }}</p>
+                        </div>
+                    </div>
+
+                    {% if shipment.description %}
+                    <div class="mb-3">
+                        <h6>Описание:</h6>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                {{ shipment.description|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Дата создания:</strong> {{ shipment.created_at|date:"d.m.Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Дата обновления:</strong> {{ shipment.updated_at|date:"d.m.Y H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">
+                        Владелец: {{ shipment.owner.get_full_name|default:shipment.owner.username }}
+                    </small>
+                </div>
+            </div>
+
+            <!-- Предложения к заявке -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Предложения</h5>
+                </div>
+                <div class="card-body">
+                    {% if shipment.bids.all %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Агент</th>
+                                        <th>Цена</th>
+                                        <th>Статус</th>
+                                        <th>Дата</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bid in shipment.bids.all %}
+                                    <tr>
+                                        <td>#{{ bid.id }}</td>
+                                        <td>{{ bid.carrier_agent.get_full_name|default:bid.carrier_agent.username }}</td>
+                                        <td>{{ bid.price }} {{ bid.currency }}</td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if bid.status == 'pending' %}bg-warning
+                                                {% elif bid.status == 'accepted' %}bg-success
+                                                {% elif bid.status == 'rejected' %}bg-danger
+                                                {% else %}bg-secondary{% endif %}">
+                                                {{ bid.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ bid.created_at|date:"d.m.Y H:i" }}</td>
+                                        <td>
+                                            <a href="{% url 'bids:bid_detail' bid.id %}" class="btn btn-sm btn-outline-primary">
+                                                Просмотр
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mb-0">
+                            Пока нет предложений к этой заявке.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Действия</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.is_authenticated %}
+                        {% if user == shipment.owner %}
+                            <!-- ВЛАДЕЛЕЦ ЗАЯВКИ -->
+                            <div class="d-grid gap-2">
+                                {% if shipment.status == 'active' %}
+                                <a href="#" class="btn btn-outline-primary">Редактировать заявку</a>
+                                <a href="#" class="btn btn-outline-danger">Отменить заявку</a>
+                                {% endif %}
+                            </div>
+                            
+                            {% if shipment.has_accepted_bid %}
+                            <div class="alert alert-success mt-3 mb-0">
+                                <h6 class="alert-heading">Заявка в работе</h6>
+                                <p class="mb-0">Вы приняли предложение #{{ shipment.accepted_bid.id }}</p>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info mt-3 mb-0">
+                                <h6 class="alert-heading">Управление предложениями</h6>
+                                <p class="mb-0">Вы можете принимать или отклонять предложения на странице каждого предложения.</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if shipment.bids.exists and shipment.status == 'active' %}
+                            <div class="mt-3">
+                                <a href="{% url 'bids:bid_detail' shipment.bids.first.id %}" class="btn btn-primary w-100">
+                                    Просмотреть предложения
+                                </a>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <!-- НЕ ВЛАДЕЛЕЦ (АГЕНТ) -->
+                            {% if shipment.status == 'active' %}
+                                {% if not user_has_pending_bid %}
+                                <a href="{% url 'bids:create_bid' shipment.id %}" class="btn btn-primary w-100">
+                                    Создать предложение
+                                </a>
+                                <div class="mt-2 text-center">
+                                    <small class="text-muted">Предложите свою цену за перевозку</small>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-warning mb-0">
+                                    <h6 class="alert-heading">У вас уже есть предложение</h6>
+                                    <p class="mb-0">Вы уже отправили предложение к этой заявке.</p>
+                                    <hr>
+                                    <a href="{% url 'bids:bid_list' %}" class="btn btn-sm btn-outline-primary">
+                                        Посмотреть мои предложения
+                                    </a>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                            <div class="alert alert-secondary mb-0">
+                                <h6 class="alert-heading">Заявка неактивна</h6>
+                                <p class="mb-0">Нельзя создавать предложения к неактивной заявке.</p>
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info mb-0">
+                            <h6 class="alert-heading">Войдите в систему</h6>
+                            <p class="mb-2">Чтобы создавать предложения, необходимо войти в систему.</p>
+                            <a href="{% url 'accounts:login' %}" class="btn btn-sm btn-primary">Войти</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if shipment.has_accepted_bid %}
+            <div class="card mt-3 border-success">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">Принятое предложение</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Цена:</strong> {{ shipment.accepted_bid.price }} {{ shipment.accepted_bid.currency }}</p>
+                    <p><strong>Агент:</strong> {{ shipment.accepted_bid.carrier_agent.get_full_name|default:shipment.accepted_bid.carrier_agent.username }}</p>
+                    <a href="{% url 'bids:bid_detail' shipment.accepted_bid.id %}" class="btn btn-sm btn-outline-success w-100">
+                        Подробнее
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
