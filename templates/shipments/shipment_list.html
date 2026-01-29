@@ -1,31 +1,102 @@
 {% extends 'base.html' %}
 
+{% block title %}Заявки - AirCargo{% endblock %}
+
 {% block content %}
-<h1>Заявки на перевозку</h1>
-{% if shipments %}
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Название</th>
-                <th>Маршрут</th>
-                <th>Цена</th>
-                <th>Дата</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for shipment in shipments %}
-            <tr>
-                <td>{{ shipment.id }}</td>
-                <td>{{ shipment.title }}</td>
-                <td>{{ shipment.departure_city }} → {{ shipment.arrival_city }}</td>
-                <td>{{ shipment.estimated_price }}</td>
-                <td>{{ shipment.created_at|date:"d.m.Y" }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <p>Заявок пока нет.</p>
-{% endif %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-shipping-fast me-2"></i>Заявки на перевозку</h2>
+
+        {% if user.is_authenticated and user.profile.is_shipper %}
+        <a href="{% url 'shipments:create_shipment' %}" class="btn btn-success">
+            <i class="fas fa-plus-circle me-1"></i>Создать заявку
+        </a>
+        {% endif %}
+    </div>
+
+    {% if shipments %}
+    <div class="row">
+        {% for shipment in shipments %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ shipment.title|truncatechars:30 }}</h5>
+                    <span class="badge bg-{% if shipment.status == 'active' %}success{% else %}secondary{% endif %}">
+                        {{ shipment.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong><i class="fas fa-route me-2"></i>Маршрут:</strong>
+                        <div class="mt-1">{{ shipment.origin_city }} → {{ shipment.destination_city }}</div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong><i class="fas fa-calendar me-2"></i>Дата:</strong>
+                            <div class="mt-1">{{ shipment.departure_date|date:"d.m.Y" }}</div>
+                        </div>
+                        <div class="col-6">
+                            <strong><i class="fas fa-weight-hanging me-2"></i>Вес:</strong>
+                            <div class="mt-1">{{ shipment.weight }} кг</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong><i class="fas fa-box me-2"></i>Тип груза:</strong>
+                        <div class="mt-1">{{ shipment.get_cargo_type_display }}</div>
+                    </div>
+
+                    {% if shipment.budget %}
+                    <div class="mb-3">
+                        <strong><i class="fas fa-money-bill-wave me-2"></i>Бюджет:</strong>
+                        <div class="mt-1">{{ shipment.budget }} ₽</div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-user me-1"></i>{{ shipment.owner.username }}
+                        </small>
+                        <div>
+                            {% if user.is_authenticated and user.profile.is_agent %}
+                            <a href="{% url 'bids:create_bid' shipment.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-handshake me-1"></i>Предложить
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'shipments:shipment_detail' shipment.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i>Подробнее
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="fas fa-clock me-1"></i>
+                        Создано: {{ shipment.created_at|date:"d.m.Y H:i" }}
+                        <span class="ms-3">
+                            <i class="fas fa-comments me-1"></i>
+                            Предложений: {{ shipment.bids.count }}
+                        </span>
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-box-open fa-4x text-muted mb-4"></i>
+        <h4 class="text-muted">Нет активных заявок</h4>
+        {% if user.is_authenticated and user.profile.is_shipper %}
+        <p class="text-muted mb-4">Создайте первую заявку на перевозку</p>
+        <a href="{% url 'shipments:create_shipment' %}" class="btn btn-success btn-lg">
+            <i class="fas fa-plus-circle me-2"></i>Создать заявку
+        </a>
+        {% else %}
+        <p class="text-muted">Заявки появятся здесь скоро</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

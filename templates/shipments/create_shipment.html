@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Создать заявку - AirCargo{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Создание новой заявки</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">{{ form.title.label }}</label>
+                                {{ form.title }}
+                                {% if form.title.errors %}
+                                <div class="text-danger">{{ form.title.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">{{ form.description.label }}</label>
+                                {{ form.description }}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.cargo_type.label }}</label>
+                                {{ form.cargo_type }}
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">{{ form.weight.label }}</label>
+                                {{ form.weight }}
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">{{ form.volume.label }}</label>
+                                {{ form.volume }}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.origin_city.label }}</label>
+                                {{ form.origin_city }}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.destination_city.label }}</label>
+                                {{ form.destination_city }}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.departure_date.label }}</label>
+                                {{ form.departure_date }}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.arrival_date.label }}</label>
+                                {{ form.arrival_date }}
+                                {% if form.arrival_date.errors %}
+                                <div class="text-danger">{{ form.arrival_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-12 mb-4">
+                                <label class="form-label">{{ form.budget.label }}</label>
+                                {{ form.budget }}
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-save me-2"></i>Создать заявку
+                            </button>
+                            <a href="{% url 'shipments:shipment_list' %}" class="btn btn-outline-secondary btn-lg ms-2">
+                                <i class="fas fa-times me-2"></i>Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-info-circle me-2"></i>Информация:</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>После создания заявки агенты смогут предлагать свои услуги</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Вы сможете просматривать и принимать предложения</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Все поля обязательны для заполнения</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем классы Bootstrap к полям формы
+    const formInputs = document.querySelectorAll('input, select, textarea');
+    formInputs.forEach(input => {
+        if (!input.classList.contains('form-control')) {
+            input.classList.add('form-control');
+        }
+    });
+    
+    // Устанавливаем минимальную дату на сегодня
+    const today = new Date().toISOString().split('T')[0];
+    const departureInput = document.querySelector('#id_departure_date');
+    const arrivalInput = document.querySelector('#id_arrival_date');
+    
+    if (departureInput) {
+        departureInput.min = today;
+    }
+    if (arrivalInput) {
+        arrivalInput.min = today;
+    }
+});
+</script>
+{% endblock %}
