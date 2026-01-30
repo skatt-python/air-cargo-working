@@ -49,7 +49,12 @@ def create_shipment(request):
             shipment.status = 'active'
             shipment.save()
             messages.success(request, 'Заявка успешно создана!')
+            # Используем reverse для получения URL
             return redirect('shipments:shipment_detail', pk=shipment.id)
+        else:
+            # Если форма невалидна, покажем ошибки
+            messages.error(request, 'Пожалуйста, исправьте ошибки в форме.')
+            print("Ошибки формы:", form.errors)  # Для отладки
     else:
         form = ShipmentForm()
 

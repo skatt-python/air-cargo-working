@@ -7,12 +7,15 @@ from .models import UserProfile
 def create_or_update_user_profile(sender, instance, created, **kwargs):
     """Создаем или обновляем профиль пользователя"""
     if created:
-        # При создании пользователя создаем пустой профиль
-        UserProfile.objects.create(user=instance)
+        # При создании пользователя создаем профиль с дефолтными значениями
+        UserProfile.objects.get_or_create(
+            user=instance,
+            defaults={
+                'role': 'shipper',  # значение по умолчанию
+                'company_name': '',
+                'phone_number': ''
+            }
+        )
     else:
         # При обновлении пользователя, убедимся что профиль существует
-        if hasattr(instance, 'profile'):
-            instance.profile.save()
-        else:
-            # На всякий случай, если профиль почему-то не создался
-            UserProfile.objects.create(user=instance)
+        UserProfile.objects.get_or_create(user=instance)

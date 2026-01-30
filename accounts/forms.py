@@ -60,7 +60,9 @@ class CustomUserCreationForm(UserCreationForm):
 
         if commit:
             user.save()
-            # Не создаем профиль заново, а обновляем существующий (созданный сигналом)
+
+            # ВАЖНО: Не создаем профиль заново, а обновляем существующий
+            # Профиль уже создан сигналом из accounts/signals.py
             user.profile.role = self.cleaned_data['role']
             user.profile.company_name = self.cleaned_data.get('company_name', '')
             user.profile.phone_number = self.cleaned_data.get('phone_number', '')

@@ -5,5 +5,7 @@ app_name = 'shipments'
 
 urlpatterns = [
     path('', views.shipment_list, name='shipment_list'),
-    path('<int:shipment_id>/', views.shipment_detail, name='shipment_detail'),
+    path('create/', views.create_shipment, name='create_shipment'),
+    path('my/', views.my_shipments, name='my_shipments'),
+    path('<int:pk>/', views.shipment_detail, name='shipment_detail'),
 ]

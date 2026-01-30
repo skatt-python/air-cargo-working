@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}Создать предложение - AirCargo{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'shipments:shipment_list' %}">Заявки</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'shipments:shipment_detail' shipment.id %}">{{ shipment.title|truncatechars:30 }}</a></li>
+            <li class="breadcrumb-item active">Создать предложение</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0"><i class="fas fa-handshake me-2"></i>Создание предложения</h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-primary mb-4">
+                        <h5><i class="fas fa-info-circle me-2"></i>Информация о заявке:</h5>
+                        <p class="mb-1"><strong>Маршрут:</strong> {{ shipment.origin_city }} → {{ shipment.destination_city }}</p>
+                        <p class="mb-1"><strong>Даты:</strong> {{ shipment.departure_date|date:"d.m.Y" }} - {{ shipment.arrival_date|date:"d.m.Y" }}</p>
+                        <p class="mb-1"><strong>Вес:</strong> {{ shipment.weight }} кг</p>
+                        {% if shipment.budget %}
+                        <p class="mb-0"><strong>Бюджет заказчика:</strong> {{ shipment.budget }} ₽</p>
+                        {% endif %}
+                    </div>
+                    
+                    {% if messages %}
+                    <div class="mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.price.id_for_label }}" class="form-label">
+                                    <i class="fas fa-money-bill-wave me-1"></i>{{ form.price.label }}
+                                </label>
+                                {{ form.price }}
+                                {% if form.price.errors %}
+                                <div class="text-danger">{{ form.price.errors }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted">{{ form.price.help_text }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.proposed_departure_date.id_for_label }}" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i>{{ form.proposed_departure_date.label }}
+                                </label>
+                                {{ form.proposed_departure_date }}
+                                <small class="form-text text-muted">{{ form.proposed_departure_date.help_text }}</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.proposed_arrival_date.id_for_label }}" class="form-label">
+                                    <i class="fas fa-calendar-check me-1"></i>{{ form.proposed_arrival_date.label }}
+                                </label>
+                                {{ form.proposed_arrival_date }}
+                                {% if form.proposed_arrival_date.errors %}
+                                <div class="text-danger">{{ form.proposed_arrival_date.errors }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted">{{ form.proposed_arrival_date.help_text }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                <i class="fas fa-comment me-1"></i>{{ form.notes.label }}
+                            </label>
+                            {{ form.notes }}
+                            <small class="form-text text-muted">Укажите дополнительные условия, сроки, требования</small>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex">
+                            <button type="submit" class="btn btn-info btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i>Отправить предложение
+                            </button>
+                            <a href="{% url 'shipments:shipment_detail' shipment.id %}" class="btn btn-outline-secondary btn-lg ms-2">
+                                <i class="fas fa-times me-2"></i>Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Советы</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Конкурентная цена:</strong> Учитывайте бюджет заказчика
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Гибкие даты:</strong> Предложите удобные сроки
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Детали:</strong> Чем подробнее описание, тем выше шансы
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Уникальность:</strong> Только одно активное предложение на заявку
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card shadow mt-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Важно</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-ban text-danger me-2"></i>
+                            Нельзя редактировать отправленное предложение
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-ban text-danger me-2"></i>
+                            Можно отменить только pending-предложения
+                        </li>
+                        <li>
+                            <i class="fas fa-user-check text-primary me-2"></i>
+                            Заказчик увидит ваше имя и компанию
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем классы Bootstrap к полям формы
+    const formInputs = document.querySelectorAll('input, select, textarea');
+    formInputs.forEach(input => {
+        if (!input.classList.contains('form-control')) {
+            input.classList.add('form-control');
+        }
+    });
+    
+    // Устанавливаем минимальные даты
+    const today = new Date().toISOString().split('T')[0];
+    const departureInput = document.querySelector('#id_proposed_departure_date');
+    const arrivalInput = document.querySelector('#id_proposed_arrival_date');
+    
+    if (departureInput) {
+        departureInput.min = today;
+    }
+    if (arrivalInput) {
+        arrivalInput.min = today;
+    }
+});
+</script>
+{% endblock %}

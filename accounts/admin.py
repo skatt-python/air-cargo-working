@@ -7,7 +7,7 @@ from .models import UserProfile
 class UserProfileInline(admin.StackedInline):
     model = UserProfile
     can_delete = False
-    verbose_name_plural = 'Профили'
+    verbose_name_plural = 'Профиль'
 
 
 class UserAdmin(BaseUserAdmin):
@@ -20,13 +20,6 @@ class UserAdmin(BaseUserAdmin):
     get_role.short_description = 'Роль'
 
 
+# Удаляем старую регистрацию и регистрируем заново
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
-
-
-@admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'role', 'company_name', 'phone_number', 'created_at')
-    list_filter = ('role', 'created_at')
-    search_fields = ('user__username', 'user__email', 'company_name')
-    list_select_related = ('user',)

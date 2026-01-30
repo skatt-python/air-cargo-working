@@ -1,10 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.views.decorators.http import require_POST
-
-from .models import Bid
-from shipments.models import Shipment
+from .models import Bid, Shipment
 from .forms import BidForm
 
 
@@ -12,165 +9,159 @@ from .forms import BidForm
 def create_bid(request, shipment_id):
     """Создание предложения к заявке"""
     shipment = get_object_or_404(Shipment, id=shipment_id)
-    
-    # Проверяем, что пользователь не владелец заявки
-    if request.user == shipment.owner:
-        messages.error(request, 'Вы не можете создавать предложения к своим заявкам.')
-        return redirect('shipments:shipment_detail', shipment_id=shipment_id)
-    
-    # Проверяем, что заявка активна
+
+    # Проверка: только агенты могут создавать предложения
+    if not request.user.profile.is_agent:
+        messages.error(request, "Только агенты могут создавать предложения.")
+        return redirect('shipments:shipment_detail', pk=shipment_id)
+
+    # Проверка: агент не может делать предложения на свои заявки
+    if shipment.owner == request.user:
+        messages.error(request, "Вы не можете делать предложения на свои заявки.")
+        return redirect('shipments:shipment_detail', pk=shipment_id)
+
+    # Проверка: только активные заявки
     if shipment.status != 'active':
-        messages.error(request, 'Нельзя создавать предложения к неактивной заявке.')
-        return redirect('shipments:shipment_detail', shipment_id=shipment_id)
-    
-    # Проверяем, нет ли уже предложения от этого пользователя
+        messages.error(request, "Нельзя делать предложения к неактивным заявкам.")
+        return redirect('shipments:shipment_detail', pk=shipment_id)
+
+    # Проверка: не более одного активного предложения на заявку
     existing_bid = Bid.objects.filter(
         shipment=shipment,
-        carrier_agent=request.user,
+        agent=request.user,
         status='pending'
     ).first()
-    
+
     if existing_bid:
-        messages.warning(request, 'У вас уже есть активное предложение для этой заявки.')
-        return redirect('shipments:shipment_detail', shipment_id=shipment_id)
-    
+        messages.warning(request, f"У вас уже есть активное предложение к этой заявке (#{existing_bid.id}).")
+        return redirect('bids:bid_detail', bid_id=existing_bid.id)
+
     if request.method == 'POST':
         form = BidForm(request.POST)
         if form.is_valid():
             bid = form.save(commit=False)
             bid.shipment = shipment
-            bid.carrier_agent = request.user
+            bid.agent = request.user
             bid.save()
-            
             messages.success(request, 'Предложение успешно создано!')
-            return redirect('shipments:shipment_detail', shipment_id=shipment_id)
+            return redirect('bids:bid_detail', bid_id=bid.id)
     else:
-        form = BidForm(initial={
-            'price': shipment.estimated_price,
-            'currency': 'USD',
-        })
-    
-    return render(request, 'bids/create_bid.html', {
+        form = BidForm()
+
+    context = {
         'form': form,
         'shipment': shipment,
-    })
+        'title': 'Создать предложение'
+    }
+    return render(request, 'bids/create_bid.html', context)
 
 
-@login_required
 def bid_list(request):
-    """Список всех предложений пользователя"""
-    user_bids = Bid.objects.filter(carrier_agent=request.user).order_by('-created_at')
-    
-    return render(request, 'bids/bid_list.html', {
-        'bids': user_bids,
-    })
+    """Список всех предложений"""
+    bids = Bid.objects.all().order_by('-created_at')
+
+    # Если пользователь авторизован, показываем его предложения первыми
+    if request.user.is_authenticated:
+        context = {
+            'bids': bids,
+            'user_bids': request.user.bids.all().order_by('-created_at'),
+            'title': 'Все предложения'
+        }
+    else:
+        context = {
+            'bids': bids,
+            'title': 'Все предложения'
+        }
+
+    return render(request, 'bids/bid_list.html', context)
 
 
-@login_required
 def bid_detail(request, bid_id):
     """Детальная страница предложения"""
     bid = get_object_or_404(Bid, id=bid_id)
-    
-    # Проверяем права доступа
-    if request.user not in [bid.carrier_agent, bid.shipment.owner]:
-        messages.error(request, 'У вас нет прав для просмотра этого предложения.')
-        return redirect('dashboard:dashboard')
-    
-    # ИСПРАВЛЕНО: Убираем проверку shipment.status == 'active' для can_accept
-    # Владелец может принять предложение если заявка активна ИЛИ уже в работе
-    can_accept = (request.user == bid.shipment.owner and 
-                  bid.status == 'pending' and 
-                  bid.shipment.status in ['active', 'in_progress'])
-    can_reject = (request.user == bid.shipment.owner and bid.status == 'pending')
-    can_cancel = (request.user == bid.carrier_agent and bid.status == 'pending')
-    
-    return render(request, 'bids/bid_detail.html', {
+
+    context = {
         'bid': bid,
-        'can_accept': can_accept,
-        'can_reject': can_reject,
-        'can_cancel': can_cancel,
-    })
+        'title': f'Предложение #{bid.id}'
+    }
+    return render(request, 'bids/bid_detail.html', context)
 
 
 @login_required
-@require_POST
 def accept_bid(request, bid_id):
-    """Принять предложение"""
+    """Принятие предложения владельцем заявки"""
     bid = get_object_or_404(Bid, id=bid_id)
-    
-    # Проверяем права
-    if request.user != bid.shipment.owner:
-        messages.error(request, 'Только владелец заявки может принимать предложения.')
-        return redirect('dashboard:dashboard')
-    
+
+    # Проверка прав: только владелец заявки может принимать предложения
+    if bid.shipment.owner != request.user:
+        messages.error(request, "Вы не можете принимать это предложение.")
+        return redirect('bids:bid_detail', bid_id=bid_id)
+
+    # Проверка: только pending предложения можно принять
     if bid.status != 'pending':
-        messages.error(request, 'Это предложение уже обработано.')
+        messages.error(request, "Это предложение уже обработано.")
         return redirect('bids:bid_detail', bid_id=bid_id)
-    
-    # Проверяем, что заявка еще активна или в работе
-    if bid.shipment.status not in ['active', 'in_progress']:
-        messages.error(request, 'Нельзя принять предложение к неактивной заявке.')
+
+    # Проверка: заявка должна быть активной
+    if bid.shipment.status != 'active':
+        messages.error(request, "Нельзя принимать предложения к неактивным заявкам.")
         return redirect('bids:bid_detail', bid_id=bid_id)
-    
-    # Проверяем, нет ли уже принятого предложения
-    if bid.shipment.has_accepted_bid():
-        messages.error(request, 'У этой заявки уже есть принятое предложение.')
-        return redirect('bids:bid_detail', bid_id=bid_id)
-    
+
     # Принимаем предложение
-    bid.accept()
-    
-    # Обновляем заявку
-    shipment = bid.shipment
-    shipment.accepted_bid = bid
-    shipment.status = 'in_progress'
-    shipment.save()
-    
+    bid.status = 'accepted'
+    bid.save()
+
     # Отклоняем все остальные предложения к этой заявке
     Bid.objects.filter(
-        shipment=shipment,
+        shipment=bid.shipment,
         status='pending'
-    ).exclude(id=bid.id).update(status='rejected')
-    
-    messages.success(request, 'Предложение принято! Заявка переведена в статус "В работе".')
-    return redirect('shipments:shipment_detail', shipment_id=shipment.id)
+    ).exclude(id=bid_id).update(status='rejected')
+
+    # Меняем статус заявки
+    bid.shipment.status = 'in_progress'
+    bid.shipment.save()
+
+    messages.success(request, 'Предложение принято! Остальные предложения отклонены.')
+    return redirect('bids:bid_detail', bid_id=bid_id)
 
 
 @login_required
-@require_POST
 def reject_bid(request, bid_id):
-    """Отклонить предложение"""
+    """Отклонение предложения владельцем заявки"""
     bid = get_object_or_404(Bid, id=bid_id)
-    
-    if request.user != bid.shipment.owner:
-        messages.error(request, 'Только владелец заявки может отклонять предложения.')
-        return redirect('dashboard:dashboard')
-    
-    if bid.status != 'pending':
-        messages.error(request, 'Это предложение уже обработано.')
+
+    # Проверка прав: только владелец заявки может отклонять предложения
+    if bid.shipment.owner != request.user:
+        messages.error(request, "Вы не можете отклонять это предложение.")
         return redirect('bids:bid_detail', bid_id=bid_id)
-    
-    bid.reject()
+
+    # Проверка: только pending предложения можно отклонить
+    if bid.status != 'pending':
+        messages.error(request, "Это предложение уже обработано.")
+        return redirect('bids:bid_detail', bid_id=bid_id)
+
+    bid.status = 'rejected'
+    bid.save()
     messages.success(request, 'Предложение отклонено.')
-    return redirect('shipments:shipment_detail', shipment_id=bid.shipment.id)
+    return redirect('bids:bid_detail', bid_id=bid_id)
 
 
 @login_required
-@require_POST
 def cancel_bid(request, bid_id):
-    """Отменить предложение (агент)"""
+    """Отмена предложения агентом"""
     bid = get_object_or_404(Bid, id=bid_id)
-    
-    if request.user != bid.carrier_agent:
-        messages.error(request, 'Только создатель предложения может его отменить.')
-        return redirect('dashboard:dashboard')
-    
-    if bid.status != 'pending':
-        messages.error(request, 'Нельзя отменить обработанное предложение.')
+
+    # Проверка прав: только агент может отменять свои предложения
+    if bid.agent != request.user:
+        messages.error(request, "Вы не можете отменять это предложение.")
         return redirect('bids:bid_detail', bid_id=bid_id)
-    
+
+    # Проверка: только pending предложения можно отменить
+    if bid.status != 'pending':
+        messages.error(request, "Нельзя отменить уже обработанное предложение.")
+        return redirect('bids:bid_detail', bid_id=bid_id)
+
     bid.status = 'cancelled'
     bid.save()
-    
     messages.success(request, 'Предложение отменено.')
     return redirect('bids:bid_list')

@@ -7,23 +7,28 @@ class ShipmentForm(forms.ModelForm):
         model = Shipment
         fields = ['title', 'description', 'cargo_type', 'weight', 'volume',
                   'origin_city', 'destination_city', 'departure_date',
-                  'arrival_date', 'budget', 'status']
+                  'arrival_date', 'budget']
+        # УБРАЛИ 'status' - он будет устанавливаться автоматически
+
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Название заявки'
+                'placeholder': 'Название заявки',
+                'required': True
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Описание груза, требования к перевозке'
+                'placeholder': 'Описание груза, требования к перевозке',
+                'required': True
             }),
-            'cargo_type': forms.Select(attrs={'class': 'form-control'}),
+            'cargo_type': forms.Select(attrs={'class': 'form-control', 'required': True}),
             'weight': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
-                'min': '0',
-                'placeholder': 'Введите вес в кг'
+                'min': '0.01',
+                'placeholder': 'Введите вес в кг',
+                'required': True
             }),
             'volume': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -33,19 +38,23 @@ class ShipmentForm(forms.ModelForm):
             }),
             'origin_city': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Город отправления'
+                'placeholder': 'Город отправления',
+                'required': True
             }),
             'destination_city': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Город назначения'
+                'placeholder': 'Город назначения',
+                'required': True
             }),
             'departure_date': forms.DateInput(attrs={
                 'class': 'form-control',
-                'type': 'date'
+                'type': 'date',
+                'required': True
             }),
             'arrival_date': forms.DateInput(attrs={
                 'class': 'form-control',
-                'type': 'date'
+                'type': 'date',
+                'required': True
             }),
             'budget': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -53,8 +62,26 @@ class ShipmentForm(forms.ModelForm):
                 'min': '0',
                 'placeholder': 'Предполагаемый бюджет'
             }),
-            'status': forms.Select(attrs={'class': 'form-control'}),
         }
+
+        labels = {
+            'title': 'Название заявки*',
+            'description': 'Описание груза*',
+            'cargo_type': 'Тип груза*',
+            'weight': 'Вес (кг)*',
+            'volume': 'Объем (м³)',
+            'origin_city': 'Город отправления*',
+            'destination_city': 'Город назначения*',
+            'departure_date': 'Дата отправления*',
+            'arrival_date': 'Дата прибытия*',
+            'budget': 'Бюджет (руб.)',
+        }
+
+    def clean_weight(self):
+        weight = self.cleaned_data.get('weight')
+        if weight <= 0:
+            raise forms.ValidationError("Вес должен быть больше 0")
+        return weight
 
     def clean(self):
         cleaned_data = super().clean()

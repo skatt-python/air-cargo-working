@@ -45,15 +45,14 @@ class CustomLoginView(LoginView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        user = self.request.user
-        return reverse_lazy('dashboard')  # Всегда перенаправлять на dashboard
+        # Всегда перенаправляем на dashboard после входа
+        from django.urls import reverse_lazy
+        return reverse_lazy('dashboard')
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             return redirect(self.get_success_url())
         return super().dispatch(request, *args, **kwargs)
-
-
 @login_required
 def profile(request):
     user = request.user

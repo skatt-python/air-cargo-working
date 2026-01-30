@@ -58,7 +58,7 @@ class Bid(models.Model):
         return self.status == 'pending'
 
     def can_be_accepted(self):
-        return self.status == 'pending'
+        return self.status == 'pending' and self.shipment.status == 'active'
 
     def can_be_cancelled(self):
         return self.status == 'pending'
@@ -67,3 +67,10 @@ class Bid(models.Model):
         ordering = ['-created_at']
         verbose_name = 'Предложение'
         verbose_name_plural = 'Предложения'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['shipment', 'agent'],
+                condition=models.Q(status='pending'),
+                name='unique_pending_bid_per_agent'
+            )
+        ]
