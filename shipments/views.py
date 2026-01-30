@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Shipment
 from .forms import ShipmentForm  # Создадим позже
+from django.http import JsonResponse
+from .models import Notification
 
 
 def shipment_list(request):
@@ -79,3 +81,38 @@ def my_shipments(request):
         'title': 'Мои заявки'
     }
     return render(request, 'shipments/my_shipments.html', context)
+
+
+@login_required
+def notification_list(request):
+    """Список уведомлений пользователя"""
+    notifications = Notification.objects.filter(user=request.user)
+
+    context = {
+        'notifications': notifications,
+    }
+    return render(request, 'shipments/notification_list.html', context)
+
+
+@login_required
+def mark_notification_read(request, notification_id):
+    """Отметить уведомление как прочитанное"""
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notification.is_read = True
+    notification.save()
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'success'})
+
+    return redirect('notification_list')
+
+
+@login_required
+def mark_all_notifications_read(request):
+    """Отметить все уведомления как прочитанные"""
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'success'})
+
+    return redirect('notification_list')
