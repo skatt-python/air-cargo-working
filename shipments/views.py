@@ -1,10 +1,10 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 from .models import Shipment
-from .forms import ShipmentForm  # Создадим позже
-from django.http import JsonResponse
-from .models import Notification
+from .forms import ShipmentForm
 
 
 def shipment_list(request):
@@ -16,9 +16,15 @@ def shipment_list(request):
         if request.user.profile.is_agent:
             shipments = shipments.exclude(owner=request.user)
 
+    # Показываем сообщение если нет заявок
+    if not shipments.exists():
+        messages.info(request, "Нет активных заявок. Будьте первым, кто создаст заявку!")
+
     context = {
         'shipments': shipments,
-        'title': 'Список заявок'
+        'title': 'Список заявок',
+        'user_is_agent': request.user.is_authenticated and hasattr(request.user,
+                                                                   'profile') and request.user.profile.is_agent
     }
     return render(request, 'shipments/shipment_list.html', context)
 
@@ -51,12 +57,9 @@ def create_shipment(request):
             shipment.status = 'active'
             shipment.save()
             messages.success(request, 'Заявка успешно создана!')
-            # Используем reverse для получения URL
             return redirect('shipments:shipment_detail', pk=shipment.id)
         else:
-            # Если форма невалидна, покажем ошибки
             messages.error(request, 'Пожалуйста, исправьте ошибки в форме.')
-            print("Ошибки формы:", form.errors)  # Для отладки
     else:
         form = ShipmentForm()
 
@@ -81,38 +84,3 @@ def my_shipments(request):
         'title': 'Мои заявки'
     }
     return render(request, 'shipments/my_shipments.html', context)
-
-
-@login_required
-def notification_list(request):
-    """Список уведомлений пользователя"""
-    notifications = Notification.objects.filter(user=request.user)
-
-    context = {
-        'notifications': notifications,
-    }
-    return render(request, 'shipments/notification_list.html', context)
-
-
-@login_required
-def mark_notification_read(request, notification_id):
-    """Отметить уведомление как прочитанное"""
-    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
-    notification.is_read = True
-    notification.save()
-
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'status': 'success'})
-
-    return redirect('notification_list')
-
-
-@login_required
-def mark_all_notifications_read(request):
-    """Отметить все уведомления как прочитанные"""
-    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
-
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'status': 'success'})
-
-    return redirect('notification_list')
